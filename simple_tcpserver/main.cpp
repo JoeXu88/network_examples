@@ -3,7 +3,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -44,6 +46,28 @@ int main()
 		exit(1);
 	}
 
+	int flags =1;
+	setsockopt(sock_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+	setsockopt(conn_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+	setsockopt(conn_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
+	setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
+
+	int opt = 0;
+	socklen_t len=sizeof(int);
+	if((getsockopt(sock_fd,SOL_TCP,TCP_NODELAY,(char*)&opt,&len))==0){
+		printf("listen sock TCP_NODELAY Value: %d\n", opt);
+	}
+
+	opt = 0;
+	if((getsockopt(conn_fd,SOL_TCP,TCP_NODELAY,(char*)&opt,&len))==0){
+		printf("connc sock TCP_NODELAY Value: %d\n", opt);
+	}
+
+	opt = 0;
+	if((getsockopt(conn_fd,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,&len))==0){
+		printf("connc sock SO_REUSEADDR Value: %d\n", opt);
+	}
+
 	char addr[16];
 	std::string client_addr_ip = inet_ntop(AF_INET, (void*)&client_addr, (char*)&addr[0], sizeof(addr));
 
@@ -70,7 +94,7 @@ int main()
 		else
 		{
 			printf("got msg from client: %s, len: %d\n", buff, ret);
-			std::string msg = "{\"serial\": \"\", \"cmd\": \"stream_keepalive_mgr_req\"}";
+			std::string msg = "{\"serial\": \"1\", \"cmd\": \"stream_keepalive_mgr_req\"}";
 			send(conn_fd, (const uint8_t*)msg.c_str(), msg.length(), 0);
 		}
 		usleep(10000);
