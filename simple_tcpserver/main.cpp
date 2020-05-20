@@ -27,6 +27,12 @@ int main()
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(port_number);
 
+	int flags =1;
+	setsockopt(sock_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+	setsockopt(conn_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+	setsockopt(conn_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
+	setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
+
 	if (bind(sock_fd, (struct sockaddr *)(&server_addr), sizeof(struct sockaddr)) == -1) {
 		fprintf(stderr,"Bind error:%s\n\a", strerror(errno));
 		exit(1);
@@ -45,12 +51,6 @@ int main()
 		fprintf(stderr,"accpet error:%s\n\a", strerror(errno));
 		exit(1);
 	}
-
-	int flags =1;
-	setsockopt(sock_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
-	setsockopt(conn_fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
-	setsockopt(conn_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
-	setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&flags, sizeof(flags));
 
 	int opt = 0;
 	socklen_t len=sizeof(int);
@@ -94,7 +94,8 @@ int main()
 		else
 		{
 			printf("got msg from client: %s, len: %d\n", buff, ret);
-			std::string msg = "{\"serial\": \"1\", \"cmd\": \"stream_keepalive_mgr_req\"}";
+			std::string msg = "{\"serial\": \"1\", \"cmd\": \"stream_keepalive_mgr_req\"}\r\n\r\n";
+			printf("send back to client: %s", msg.c_str());
 			send(conn_fd, (const uint8_t*)msg.c_str(), msg.length(), 0);
 		}
 		usleep(10000);
