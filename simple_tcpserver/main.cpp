@@ -68,10 +68,16 @@ int main()
 		printf("connc sock SO_REUSEADDR Value: %d\n", opt);
 	}
 
-	char addr[16];
-	std::string client_addr_ip = inet_ntop(AF_INET, (void*)&client_addr, (char*)&addr[0], sizeof(addr));
+	uint8_t buf[sizeof(struct in6_addr)];
+	inet_pton(AF_INET, "127.0.0.1", buf);
+	printf("buf: ");
+	for(int i=0; i<sizeof(struct in6_addr); i++)
+		printf("%x", buf);
+	printf("\n");
 
-	printf("new client conneted: %s\n", client_addr_ip.c_str());
+	char addr[INET_ADDRSTRLEN] = {0};
+	std::string client_addr_ip = inet_ntop(AF_INET, (void*)&client_addr.sin_addr, (char*)&addr[0], sizeof(addr));
+	printf("new client conneted: %s, %s\n", client_addr_ip.c_str(), inet_ntoa(client_addr.sin_addr));
 
 	int ret = -1;
 	char buff[1024] = {0};
