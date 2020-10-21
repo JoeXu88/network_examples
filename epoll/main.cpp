@@ -19,13 +19,19 @@ const int port = 9099;
 
 int set_sock_nblock(int skt, bool ublock)
 {
-    int nblock = ublock;
-    int ret = ioctl(skt, FIONBIO, &nblock);
-    if(ret == -1)
-    {
-        printf("set %d non block failed\n", skt);
-        return -1;
-    }
+    // int nblock = ublock;
+    // int ret = ioctl(skt, FIONBIO, &nblock);
+    // if(ret == -1)
+    // {
+    //     printf("set %d non block failed\n", skt);
+    //     return -1;
+    // }
+
+    if(!ublock) return 0;
+
+    int flags = fcntl (skt, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    fcntl (skt, F_SETFL, flags);
 
     return 0;
 }
@@ -68,8 +74,8 @@ int main()
     }
 
     struct epoll_event event;
-    // event.events = EPOLLIN | EPOLLET;
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLET;
+    // event.events = EPOLLIN;
     event.data.fd = listen_sd;
     if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_sd, &event) == -1)
     {
@@ -95,7 +101,7 @@ int main()
 
 
         //测试惊群效应，休眠一段时间以保证事件处理延后，然后其余监听的epoll 也能被调到
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         //process events
         for(int i=0; i<ready_fds; i++)
@@ -112,7 +118,7 @@ int main()
                 client_fd = accept(listen_sd, (struct sockaddr *)(&client_addr), &addr_len);
                 if(client_fd == -1)
                 {
-                    printf("%d accept failed\n", epoll_fd);
+                    printf("%d accept failed, errno: %d\n", epoll_fd, errno);
                     continue;
                 }
                 }
